@@ -10,12 +10,18 @@ import UIKit
 import FirebaseAuth
 
 class RegisterViewController: UIViewController {
+    
+    //MARK: - Lifecycle
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        backButonColor()
+    }
 
     //MARK: - Textfields
     @IBOutlet weak var emailTextfield: UITextField!
     @IBOutlet weak var passwordTextfield: UITextField!
     
-    //MARK: - Buttons
+    //MARK: - Buttons (Registration)
     @IBAction func registerPressed(_ sender: UIButton) {
         
         // Проверяем, что email и password есть в текстовых полях ввода пользователей
@@ -45,4 +51,8 @@ class RegisterViewController: UIViewController {
         }
     }
     
+    //MARK: - Methods
+    func backButonColor() {
+        navigationController?.navigationBar.tintColor = UIColor.black
+    }
 }
