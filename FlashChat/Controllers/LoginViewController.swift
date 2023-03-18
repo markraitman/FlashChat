@@ -17,11 +17,11 @@ class LoginViewController: UIViewController {
         backButonColor()
     }
     
-    //MARK: - Textfields
+    //MARK: - Outlets
     @IBOutlet weak var emailTextfield: UITextField!
     @IBOutlet weak var passwordTextfield: UITextField!
     
-    //MARK: - Buttons (Login)
+    //MARK: - Actions (Login)
     @IBAction func loginPressed(_ sender: UIButton) {
         // Сначала мы извлекаем значения электронной почты и пароля из текстовых полей, только если они не nil.
         if let email = emailTextfield.text, let password = passwordTextfield.text {
