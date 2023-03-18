@@ -16,12 +16,12 @@ class RegisterViewController: UIViewController {
         super.viewDidLoad()
         backButonColor()
     }
-
-    //MARK: - Textfields
+    
+    //MARK: - Outlets
     @IBOutlet weak var emailTextfield: UITextField!
     @IBOutlet weak var passwordTextfield: UITextField!
     
-    //MARK: - Buttons (Registration)
+    //MARK: - Actions (Registration)
     @IBAction func registerPressed(_ sender: UIButton) {
         
         // Проверяем, что email и password есть в текстовых полях ввода пользователей
