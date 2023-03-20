@@ -44,7 +44,7 @@ class RegisterViewController: UIViewController {
                     self.present(alertController, animated: true, completion: nil)
                 } else {
                     // Если пользователь успешно создан, переходим на следующий экран
-                    self.performSegue(withIdentifier: "RegisterToChat", sender: self)
+                    self.performSegue(withIdentifier: Segues.registerSegue, sender: self)
                 }
             }
             

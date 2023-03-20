@@ -26,7 +26,7 @@ class WelcomeViewController: UIViewController {
         titleLabel.text = ""
         
         //Assigning the "⚡️FlashChat" string to the constant variable `titleText`.
-        let titleText = "⚡️FlashChat"
+        let titleText = AppName.appName
         
         /*
          Initializing a double variable charIndex with 0.0 value
