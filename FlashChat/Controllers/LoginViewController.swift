@@ -37,7 +37,7 @@ class LoginViewController: UIViewController {
                     self.present(alertController, animated: true, completion: nil)
                 } else {
                     // Если ошибки нет, то мы выполняем переход на следующий экран через performSegue.
-                    self.performSegue(withIdentifier: "LoginToChat", sender: self)
+                    self.performSegue(withIdentifier: Segues.loginSegue, sender: self)
                 }
             }
         }

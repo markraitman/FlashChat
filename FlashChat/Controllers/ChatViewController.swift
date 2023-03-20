@@ -43,7 +43,7 @@ class ChatViewController: UIViewController {
     func navigationBarSetup() {
         navigationController?.navigationBar.tintColor = UIColor.black
         navigationController?.navigationItem.hidesBackButton = true
-        title = "⚡️FlashChat"
+        title = AppName.appName
     }
     
 }
