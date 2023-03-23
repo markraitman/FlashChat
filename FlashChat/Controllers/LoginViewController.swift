@@ -46,7 +46,7 @@ class LoginViewController: UIViewController {
     
     //MARK: - Methods
     func backButonColor() {
-        navigationController?.navigationBar.tintColor = UIColor.black
+        navigationController?.navigationBar.tintColor = UIColor.white
     }
     
 }

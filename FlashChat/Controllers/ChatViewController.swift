@@ -9,8 +9,6 @@ import Foundation
 import UIKit
 import FirebaseAuth
 import FirebaseFirestore
-// Импортируем NotificationCenter
-import NotificationCenter
 
 class ChatViewController: UIViewController {
     
@@ -24,17 +22,28 @@ class ChatViewController: UIViewController {
     
     
     //MARK: - Actions
+    // Обработчик нажатия кнопки "Оправить"
     @IBAction func sendPressed(_ sender: UIButton) {
+        
+        // Проверяем, что текст сообщения и email отправителя существуют
         if let messageBody = messageTextfield.text, let messageSender =  Auth.auth().currentUser?.email{
+            
+            // Добавляем данные в Firestore
             db.collection(FStore.collectionName).addDocument(data: [
                 FStore.senderField: messageSender,
                 FStore.bodyField: messageBody,
                 FStore.dateField: Date().timeIntervalSince1970
             ]) { (error) in
                 if let e = error {
+                    // Обработка ошибки
                     print("There was an error: \(e.localizedDescription)")
                 } else {
                     print("Successfully saved data")
+                    
+                    //Очищаем на главном потоке поле строки для ввода следующего сообщения после сохранения
+                    DispatchQueue.main.async {
+                        self.messageTextfield.text = ""
+                    }
                 }
             }
         }
@@ -54,33 +63,6 @@ class ChatViewController: UIViewController {
         }
     }
     
-    //Keyboard methods
-//    // Обработчик уведомлений о появлении клавиатуры
-//    @objc func keyboardWillShow(notification: Notification) {
-//        // Получение размера клавиатуры, если она появилась
-//        if let keyboardSize = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue {
-//            let height = keyboardSize.height // Получение высоты клавиатуры
-//            // Анимация изменения размера таблицы при появлении клавиатуры
-//            UIView.animate(withDuration: 0.1, animations: {
-//                self.tableView.frame = CGRect(x: self.tableView.frame.origin.x,
-//                                              y: self.tableView.frame.origin.y,
-//                                              width: self.tableView.frame.width,
-//                                              height: self.view.frame.height - height - self.tableView.frame.origin.y)
-//            })
-//        }
-//    }
-//    
-//    // Обработчик уведомлений об исчезновении клавиатуры
-//    @objc func keyboardWillHide(notification: Notification) {
-//        // Анимация изменения размера таблицы при исчезновении клавиатуры
-//        UIView.animate(withDuration: 0.1, animations: {
-//            self.tableView.frame = CGRect(x: self.tableView.frame.origin.x,
-//                                          y: self.tableView.frame.origin.y,
-//                                          width: self.tableView.frame.width,
-//                                          height: self.view.frame.height - self.tableView.frame.origin.y)
-//        })
-//    }
-    
     //MARK: - Lifecycle methods
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -91,16 +73,6 @@ class ChatViewController: UIViewController {
         loadMessages()
         
         tableView.register(UINib(nibName: Cells.cellNibName, bundle: nil), forCellReuseIdentifier: Cells.cellIdentifier)
-        
-        
-        
-//        // Добавляем в NotificationCenter наблюдателя, который следит за появлением клавиатуры и вызывает функцию keyboardWillShow
-//        // object: nil обозначает, что наблюдатель следит за всеми объектами
-//        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
-//
-//        // Добавляем в NotificationCenter наблюдателя, который следит за скрытием клавиатуры и вызывает функцию keyboardWillHide
-//        // object: nil обозначает, что наблюдатель следит за всеми объектами
-//        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
     }
     
     //MARK: - Methods
@@ -109,7 +81,7 @@ class ChatViewController: UIViewController {
     func navigationBarSetup() {
         
         // Задание цвета для текста Navigation Bar:
-        navigationController?.navigationBar.tintColor = UIColor.black
+        navigationController?.navigationBar.tintColor = UIColor.white
         
         // Скрытие кнопки возврата на предыдущий экран:
         navigationController?.navigationItem.hidesBackButton = true
@@ -152,6 +124,10 @@ class ChatViewController: UIViewController {
                                 //Обновление таблицы на главном потоке, чтобы пользователь мог взаимодействовать с ней без задержек
                                 DispatchQueue.main.async {
                                     self.tableView.reloadData()
+                                    
+                                    let indexPath = IndexPath(row: self.messages.count - 1, section: 0)
+                                    self.tableView.scrollToRow(at: indexPath, at: .top, animated: true)
+                                    
                                 }
                             }
                         }
@@ -164,13 +140,31 @@ class ChatViewController: UIViewController {
 
 //MARK: - Extensions
 extension ChatViewController: UITableViewDataSource {
+    // Функция, возвращающая количество строк в таблице
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         messages.count
     }
     
+    // Функция для создания ячейки таблицы
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let message = messages[indexPath.row]
+        
+        // Инициализация ячейки из таблицы
         let cell = tableView.dequeueReusableCell(withIdentifier: Cells.cellIdentifier, for: indexPath) as! MessageCell
-        cell.label.text = messages[indexPath.row].body
+        cell.label.text = message.body
+        
+        // Если отправитель сообщения - текущий пользователь, то делаем видимой правую картинку-иконку, иначе - левую
+        if message.sender == Auth.auth().currentUser?.email {
+            cell.leftImageView.isHidden = true
+            cell.rightImageView.isHidden = false
+            cell.messageBubble.backgroundColor = UIColor(named: BrandColors.lightPurple)
+            cell.label.textColor = UIColor(named: BrandColors.purple)
+        } else {
+            cell.leftImageView.isHidden = false
+            cell.rightImageView.isHidden = true
+            cell.messageBubble.backgroundColor = UIColor(named: BrandColors.purple)
+            cell.label.textColor = UIColor(named: BrandColors.lightPurple)
+        }
         
         return cell
     }
