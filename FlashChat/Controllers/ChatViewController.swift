@@ -8,6 +8,7 @@
 import Foundation
 import UIKit
 import FirebaseAuth
+import FirebaseFirestore
 
 class ChatViewController: UIViewController {
     
@@ -18,17 +19,14 @@ class ChatViewController: UIViewController {
         tableView.dataSource = self
         navigationBarSetup()
         
+        loadMessages()
+        
         tableView.register(UINib(nibName: Cells.cellNibName, bundle: nil), forCellReuseIdentifier: Cells.cellIdentifier)
     }
     
     //MARK: - Properties
-    var messages: [Message] = [
-        Message(sender: "1@2.com", body: "Hello!"),
-        Message(sender: "a@b.com", body: "Hi!"),
-        Message(sender: "1@2.com", body: "Indicates an error occurred when accessing the keychain. The `NSLocalizedFailureReasonErrorKey` field in the `userInfo` dictionary will contain more information about the error encountered.!"),
-        Message(sender: "a@b.com", body: "You use text fields to gather text-based input from the user using the onscreen keyboard. The keyboard is configurable for many different types of input such as plain text, emails, numbers, and so on. Text fields use the target-action mechanism and a delegate object to report changes made during the course of editing.!"),
-        Message(sender: "1@2.com", body: "If the view controller or one of its ancestors is a child of a navigation controller, this property contains the owning navigation controller. This property is nil if the view controller is not embedded inside a navigation controller.")
-    ]
+    let db = Firestore.firestore()
+    var messages: [Message] = []
     
     //MARK: - Outlets
     @IBOutlet weak var tableView: UITableView!
@@ -37,6 +35,20 @@ class ChatViewController: UIViewController {
     
     //MARK: - Actions
     @IBAction func sendPressed(_ sender: UIButton) {
+        if let messageBody = messageTextfield.text, let messageSender =  Auth.auth().currentUser?.email{
+            db.collection(FStore.collectionName).addDocument(data: [
+                FStore.senderField: messageSender,
+                FStore.bodyField: messageBody,
+                FStore.dateField: Date().timeIntervalSince1970
+            ]) { (error) in
+                if let e = error {
+                    print("There was an error: \(e.localizedDescription)")
+                } else {
+                    print("Successfully saved data")
+                }
+            }
+        }
+        
     }
     
     @IBAction func logOutPressed(_ sender: UIBarButtonItem) {
@@ -57,6 +69,48 @@ class ChatViewController: UIViewController {
         navigationController?.navigationBar.tintColor = UIColor.black
         navigationController?.navigationItem.hidesBackButton = true
         title = AppName.appName
+    }
+    
+    // Эта функция загружает сообщения из базы данных Firestore
+    func loadMessages() {
+        
+        // Получает файл коллекции сообщений из базы данных Firestore
+        db.collection(FStore.collectionName)
+        
+            //Сортирует сообщения по дате
+            .order(by: FStore.dateField)
+        
+            //"Слушает" файлы на изменения, чтобы сразу отобразить на экране
+            .addSnapshotListener() { querySnapshot, error in
+                
+                // Инициализирует пустой массив для хранения загруженных сообщений
+                self.messages = []
+                
+                // Если произошла ошибка, выводит сообщение об ошибке
+                if let e = error {
+                    print("Произошла ошибка: \(e.localizedDescription)")
+                } else {
+                    // Если ошибок нет, извлекает документы из файла
+                    if let snapShotDocuments = querySnapshot?.documents {
+                        
+                        // Перебирает файлы и извлекает отправителя и текст сообщения
+                        for doc in snapShotDocuments {
+                            let data = doc.data()
+                            if let messageSender = data[FStore.senderField] as? String, let messageBody = data[FStore.bodyField] as? String {
+                                
+                                // Создает новый объект сообщения с отправителем и текстом сообщения и добавляет его в массив сообщений
+                                let newMessage = Message(sender: messageSender, body: messageBody)
+                                self.messages.append(newMessage)
+                                
+                                //Обновление таблицы на главном потоке, чтобы пользователь мог взаимодействовать с ней без задержек
+                                DispatchQueue.main.async {
+                                    self.tableView.reloadData()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
     }
     
 }
